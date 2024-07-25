@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import { ChatBox } from "./components/ChatBox";
 import { Box, Button } from "@mui/joy";
 import { Arrow } from "./components/Arrow";
-import { CHATBOX_WIDTH, QueryResponsePair } from "./constants";
+import { CHATBOX_WIDTH, ModelTypes, QueryResponsePair } from "./constants";
+import { LLMChatParams } from "./llm/LLMChat";
+import { ParamSelector } from "./components/ParamSelector";
 
 /**
  * This page controls the CRUD of nodes and edges.
@@ -17,14 +19,24 @@ interface GraphControllerProps {
 
 
 export const GraphController = (props: GraphControllerProps) => {
+    const DEFAULT_LLM_CHAT_PARAMS: LLMChatParams = {
+        model: ModelTypes.Llama_3_8b,
+        temperature: 1,
+        maxResponseLength: 2000,
+        stream: true
+    }
+
     const [nodes, setNodes] = useState<Node[]>([])
     const [edges, setEdges] = useState<Edge[]>([])
     const [nodeIDCount, setNodeIDCount] = useState(0)
+    const [llmChatParams, setllmChatParams] = useState<LLMChatParams>(DEFAULT_LLM_CHAT_PARAMS)
 
     const NULL_PARENT_ID = "-1";
     const LOCAL_STORAGE_NODES = "nodes"
     const LOCAL_STORAGE_EDGES = "edges"
     const LOCAL_STORAGE_NODE_ID_COUNT = "nodeIDCount"
+
+    
 
     const readDataFromLocalStorage = () => {
         const storedNodes = localStorage.getItem(LOCAL_STORAGE_NODES)
@@ -218,6 +230,7 @@ export const GraphController = (props: GraphControllerProps) => {
                     onQueryChange={onQueryChange}
                     onResponseChange={onResponseChange}
                     getHistory={getNodeAncestorQueryResponse}
+                    llmChatParams={llmChatParams}
                 />
             })}
             <svg width={"100%"} height={"100%"}>
@@ -225,6 +238,18 @@ export const GraphController = (props: GraphControllerProps) => {
                     return getEdgeArrow(edge) 
                 })}
             </svg>
+            <Box
+            sx={{
+                position: "fixed",
+                bottom: 0,
+                left: 0,
+                padding: 1
+            }}>
+                <ParamSelector
+                    params={llmChatParams}
+                    onParamUpdate={newParams => setllmChatParams(newParams)}
+                />
+            </Box>
         </Box>
     )
 }

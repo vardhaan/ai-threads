@@ -8,10 +8,14 @@ import ollama from 'ollama/browser'
 interface LLMChatProps {
     prompt: string;
     priorMessages: QueryResponsePair[],
-    model?: ModelTypes,
-    temperature?: number;
-    maxResponseLength?: number;
-    stream?: boolean;
+    params?: LLMChatParams
+}
+
+export interface LLMChatParams {
+    model: ModelTypes,
+    temperature: number,
+    maxResponseLength: number,
+    stream: boolean
 }
 
 const DEFAULT_PARAMS = {
@@ -30,22 +34,23 @@ const isOllamaModel = (model: ModelTypes) => {
 }
 
 export const LLMChat = async function*(props: LLMChatProps) {
-    const { prompt, priorMessages, ...rest } = props
-    const params = { ...DEFAULT_PARAMS, ...rest }
+    const { prompt, priorMessages, params } = props
+    const setParams = { ...DEFAULT_PARAMS, ...params }
 
     const chatProps = {
         prompt: prompt,
         priorMessages: priorMessages,
-        ...params
+        ...setParams
     }
 
-    if (isOpenAIModel(params.model)) {
+    console.log("chat props:", chatProps)
+    if (isOpenAIModel(chatProps.model)) {
         const openAIChat = OpenAIChat(chatProps)
         for await (const token of openAIChat) {
             yield token;
         }
     }
-    if (isOllamaModel(params.model)) {
+    if (isOllamaModel(chatProps.model)) {
         const ollamaChat = OllamaChat(chatProps)
         for await (const token of ollamaChat) {
             yield token;

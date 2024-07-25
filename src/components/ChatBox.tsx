@@ -1,9 +1,9 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { CHATBOX_WIDTH, QueryResponsePair } from '../constants';
+import { CHATBOX_WIDTH, ModelTypes, QueryResponsePair } from '../constants';
 import { Box, Button, CircularProgress, IconButton, Input, Typography } from '@mui/joy';
 import Draggable, { DraggableData, DraggableEvent } from 'react-draggable';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
-import { LLMChat } from '../llm/LLMChat';
+import { LLMChat, LLMChatParams } from '../llm/LLMChat';
 
 const ReactMarkdown = lazy(() => import('react-markdown'));
 
@@ -22,6 +22,7 @@ interface ChatBoxProps {
     // removeParent: (ID: string, parentID: string) => string;
     onQueryChange: (nodeID: string, newQuery: string) => void;
     onResponseChange: (nodeID: string, newResponse: string) => void;
+    llmChatParams: LLMChatParams
 }
 
 /**
@@ -45,13 +46,12 @@ export const ChatBox = (props: ChatBoxProps) => {
     }
 
     const onQuerySubmit = async () => {
-        console.log(`${query} submitted!`)
         const priorMessages = props.getHistory(props.parentID)
         setDisplayResponse(true)
         const llmChatProps = {
             prompt: query,
             priorMessages: priorMessages,
-            stream: true
+            params: props.llmChatParams
         }
         const responseStream = LLMChat(llmChatProps)     
         const handleResponseStream = async () => {
