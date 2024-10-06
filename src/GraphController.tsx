@@ -25,16 +25,21 @@ export const GraphController = (props: GraphControllerProps) => {
         maxResponseLength: 2000,
         stream: true
     }
-
-    const [nodes, setNodes] = useState<Node[]>([])
-    const [edges, setEdges] = useState<Edge[]>([])
-    const [nodeIDCount, setNodeIDCount] = useState(0)
-    const [llmChatParams, setllmChatParams] = useState<LLMChatParams>(DEFAULT_LLM_CHAT_PARAMS)
-
     const NULL_PARENT_ID = "-1";
     const LOCAL_STORAGE_NODES = "nodes"
     const LOCAL_STORAGE_EDGES = "edges"
     const LOCAL_STORAGE_NODE_ID_COUNT = "nodeIDCount"
+
+    const storedNodes = localStorage.getItem(LOCAL_STORAGE_NODES)
+    const storedEdges = localStorage.getItem(LOCAL_STORAGE_EDGES)
+    const storedNodeIDCount = localStorage.getItem(LOCAL_STORAGE_NODE_ID_COUNT)
+
+    const [nodes, setNodes] = useState<Node[]>(props.useLocalStorage && storedNodes ? JSON.parse(storedNodes) : [])
+    const [edges, setEdges] = useState<Edge[]>(props.useLocalStorage && storedEdges ? JSON.parse(storedEdges) : [])
+    const [nodeIDCount, setNodeIDCount] = useState<number>(props.useLocalStorage && storedNodeIDCount ? JSON.parse(storedNodeIDCount) : 0)
+    const [llmChatParams, setllmChatParams] = useState<LLMChatParams>(DEFAULT_LLM_CHAT_PARAMS)
+
+    
 
     
 
@@ -50,9 +55,7 @@ export const GraphController = (props: GraphControllerProps) => {
 
 
     const saveDataToLocalStorage = () => {
-        if (nodeIDCount === 0) {
-            return
-        }
+        console.log("saving", nodes, edges, nodeIDCount)
         localStorage.setItem(LOCAL_STORAGE_NODES, JSON.stringify(nodes))
         localStorage.setItem(LOCAL_STORAGE_EDGES, JSON.stringify(edges))
         localStorage.setItem(LOCAL_STORAGE_NODE_ID_COUNT, JSON.stringify(nodeIDCount))
@@ -69,31 +72,34 @@ export const GraphController = (props: GraphControllerProps) => {
     }
 
     useEffect(() => {
-        console.log(nodes)
+        console.log("n", nodes)
     }, [nodes])
 
-    useEffect(() => {
-        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-            if (props.useLocalStorage) {
-                saveDataToLocalStorage();
-            }
-        };
-        console.log("ls val changed", props.useLocalStorage)
-        window.addEventListener("beforeunload", handleBeforeUnload);
+    // useEffect(() => {
+    //     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+    //         if (props.useLocalStorage) {
+    //             saveDataToLocalStorage();
+    //         }
+    //     };
+    //     console.log("ls val changed", props.useLocalStorage)
+    //     window.addEventListener("beforeunload", handleBeforeUnload);
     
-        return () => {
-            window.removeEventListener("beforeunload", handleBeforeUnload);
-        };
-    }, [props.useLocalStorage]);
+    //     return () => {
+    //         window.removeEventListener("beforeunload", handleBeforeUnload);
+    //     };
+    // }, [props.useLocalStorage]);
+
+    // useEffect(() => {
+    //     if (props.useLocalStorage) {
+    //         setInitializing(true);
+    //         readDataFromLocalStorage();
+    //         setInitializing(false);
+    //     }
+    // }, [])
 
     useEffect(() => {
         if (props.useLocalStorage) {
-            readDataFromLocalStorage();
-        }
-    }, [])
-
-    useEffect(() => {
-        if (props.useLocalStorage) {
+            console.log("updating LS", nodes)
             saveDataToLocalStorage();
         }
     }, [nodes, edges, nodeIDCount]);
@@ -132,6 +138,23 @@ export const GraphController = (props: GraphControllerProps) => {
             setEdges([...edges, edge])
         }
         setNodeIDCount(prev => prev+1)
+    }
+
+    const deleteNode = (nodeID: string, nodesList: Node[] = nodes, edgesList: Edge[] = edges) => {
+        const outEdges = edgesList.filter(edge => edge.fromID === nodeID);
+
+        const newNodes = nodesList.filter(node => node.ID !== nodeID)
+        const newEdges = edgesList.filter(edge => edge.fromID !== nodeID && edge.toID !== nodeID)
+        console.log("out edges", outEdges)
+        console.log("new nodes list post delete", newNodes)
+        console.log("new edges list post delete", newEdges)
+        setNodes(newNodes)
+        setEdges(newEdges)
+        outEdges.forEach(edge => {
+            deleteNode(edge.toID, newNodes, newEdges)
+        })
+        
+
     }
 
     useEffect(() => {
@@ -231,6 +254,7 @@ export const GraphController = (props: GraphControllerProps) => {
                     onResponseChange={onResponseChange}
                     getHistory={getNodeAncestorQueryResponse}
                     llmChatParams={llmChatParams}
+                    delete={deleteNode}
                 />
             })}
             <svg width={"100%"} height={"100%"}>

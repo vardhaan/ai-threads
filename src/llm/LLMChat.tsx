@@ -117,6 +117,7 @@ const OllamaChat = async function* (props: OllamaChatProps) {
         console.log("llama!")
         const response = await ollama.chat({ model: props.model, messages: messageArray, stream: true })
         for await (const chunk of response) {
+            console.log(chunk)
             yield chunk.message.content;
         }
     } else {

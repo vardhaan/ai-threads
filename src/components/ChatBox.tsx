@@ -23,6 +23,7 @@ interface ChatBoxProps {
     onQueryChange: (nodeID: string, newQuery: string) => void;
     onResponseChange: (nodeID: string, newResponse: string) => void;
     llmChatParams: LLMChatParams
+    delete: (nodeID: string) => void;
 }
 
 /**
@@ -81,6 +82,10 @@ export const ChatBox = (props: ChatBoxProps) => {
         props.addNewChild(props.ID)
     }
 
+    const deleteNode = () => {
+        props.delete(props.ID)
+    }
+
     return (
             <ChatBoxDisplay
                 query={query}
@@ -92,6 +97,7 @@ export const ChatBox = (props: ChatBoxProps) => {
                 addNewChild={addNewChild}
                 positionX={props.positionX}
                 positionY={props.positionY}
+                delete={deleteNode}
             />
     )
 
@@ -107,6 +113,7 @@ interface ChatBoxDisplayProps {
     addNewChild: () => void;
     positionX: number;
     positionY: number;
+    delete: () => void;
 }
 
 const ChatBoxDisplay = (props: ChatBoxDisplayProps) => {
@@ -196,6 +203,12 @@ const ChatBoxDisplay = (props: ChatBoxDisplayProps) => {
                             onClick={() => props.addNewChild()}
                         >
                             Add
+                        </Button>
+                        <Button
+                            onClick={() => props.delete()}
+                            color="danger"
+                        >
+                            Delete
                         </Button>
                     </Box>
                 </Box>}
